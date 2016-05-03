@@ -20,7 +20,11 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/skbuff.h>
-
+#include <linux/pm_runtime.h>
+#include <linux/mmc/host.h>
+#include <linux/mmc/card.h>
+#include <linux/mmc/sdio.h>
+#include <linux/mmc/sdio_func.h>
 #include <linux/semaphore.h>
 #include <linux/completion.h>
 
@@ -378,13 +382,21 @@ static int linux_wlan_start_firmware(struct net_device *dev)
 	struct wilc_vif *vif;
 	struct wilc *wilc;
 	int ret = 0;
+	struct sdio_func *func;
 
 	vif = netdev_priv(dev);
 	wilc = vif->wilc;
+	func = dev_to_sdio_func(wilc->dev);
 
 	ret = wilc_wlan_start(wilc);
 	if (ret < 0)
 		return ret;
+
+	if (wilc->io_type == HIF_SDIO) {
+		ret = pm_runtime_get_sync(func->card->host->parent);
+		if (ret < 0)
+			return ret;
+	}
 
 	ret = wilc_lock_timeout(wilc, &wilc->sync_event, 5000);
 	if (ret)
