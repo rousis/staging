@@ -486,17 +486,17 @@ void chip_wakeup(struct wilc *wilc)
 			wilc->hif_func->hif_read_reg(wilc, 0xf1,
 						     &clk_status_reg);
 
-			while ((clk_status_reg & 0x1) == 0) {
+			while ((clk_status_reg & BIT(0)) == 0) {
 				usleep_range(2 * 1000, 2 * 1000);
 
 				wilc->hif_func->hif_read_reg(wilc, 0xf1,
 							     &clk_status_reg);
 			}
-			if ((clk_status_reg & 0x1) == 0) {
+			if ((clk_status_reg & BIT(0)) == 0) {
 				wilc->hif_func->hif_write_reg(wilc, 0xf0,
 							      reg & (~BIT(0)));
 			}
-		} while ((clk_status_reg & 0x1) == 0);
+		} while ((clk_status_reg & BIT(0)) == 0);
 	}
 
 	if (chip_ps_state == CHIP_SLEEPING_MANUAL) {
