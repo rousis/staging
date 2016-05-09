@@ -564,8 +564,7 @@ static void CfgConnectResult(enum conn_event enuConnDisconnEvent,
 			pstrDisconnectNotifInfo->reason = 1;
 
 		cfg80211_disconnected(dev, pstrDisconnectNotifInfo->reason, pstrDisconnectNotifInfo->ie,
-				      pstrDisconnectNotifInfo->ie_len, false,
-				      GFP_KERNEL);
+				      pstrDisconnectNotifInfo->ie_len, GFP_KERNEL);
 	}
 }
 
@@ -832,7 +831,7 @@ static int disconnect(struct wiphy *wiphy, struct net_device *dev, u16 reason_co
 
 	if (wilc->close) {
 		/* already disconnected done */
-		cfg80211_disconnected(dev, 0, NULL, 0, true, GFP_KERNEL);
+		cfg80211_disconnected(dev, 0, NULL, 0, GFP_KERNEL);
 		return 0;
 	}
 
