@@ -89,6 +89,7 @@ static struct wilc_cfg_byte g_cfg_byte[] = {
 	{WID_TX_ABORT_CONFIG, 0},
 	{WID_11N_IMMEDIATE_BA_ENABLED, 0},
 	{WID_11N_TXOP_PROT_DISABLE, 0},
+	{WID_TX_POWER, 0},
 	{WID_NIL, 0}
 };
 
