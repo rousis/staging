@@ -163,6 +163,10 @@ struct tx_power {
 	u8 tx_pwr;
 };
 
+struct get_tx_power {
+	u8 *tx_pwr;
+};
+
 union message_body {
 	struct scan_attr scan_info;
 	struct connect_attr con_info;
@@ -189,6 +193,7 @@ union message_body {
 	char *data;
 	struct del_all_sta del_all_sta_info;
 	struct tx_power tx_power;
+	struct get_tx_power get_tx_power;
 };
 
 struct host_if_msg {
@@ -2635,7 +2640,8 @@ static int hostIFthread(void *pvArg)
 			break;
 
 		case HOST_IF_MSG_GET_TX_POWER:
-			handle_get_tx_pwr(msg.vif, &msg.body.tx_power.tx_pwr);
+			handle_get_tx_pwr(msg.vif,
+					  msg.body.get_tx_power.tx_pwr);
 			break;
 		default:
 			netdev_err(vif->ndev, "[Host Interface] undefined\n");
@@ -4104,13 +4110,13 @@ int wilc_get_tx_power(struct wilc_vif *vif, u8 *tx_power)
 
 	msg.id = HOST_IF_MSG_GET_TX_POWER;
 	msg.vif = vif;
+	msg.body.get_tx_power.tx_pwr = tx_power;
 
 	ret = wilc_mq_send(&hif_msg_q, &msg, sizeof(struct host_if_msg));
 	if (ret)
 		return -EIO;
 
 	wait_for_completion(&hif_wait_response);
-	*tx_power = msg.body.tx_power.tx_pwr;
 
 	return ret;
 }
