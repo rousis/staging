@@ -2021,9 +2021,8 @@ static int add_station(struct wiphy *wiphy, struct net_device *dev,
 }
 
 static int del_station(struct wiphy *wiphy, struct net_device *dev,
-		       struct station_del_parameters *params)
+		       u8 *mac)
 {
-	const u8 *mac = params->mac;
 	s32 s32Error = 0;
 	struct wilc_priv *priv;
 	struct wilc_vif *vif;
