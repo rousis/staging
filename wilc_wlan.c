@@ -1024,6 +1024,7 @@ int wilc_wlan_start(struct wilc *wilc)
 	reg |= WILC_HAVE_EXT_PA_INV_TX_RX;
 #endif
 	reg |= WILC_HAVE_USE_IRQ_AS_HOST_WAKE;
+	reg |= WILC_HAVE_SIN_IP_ANT_DEV_MODULE;
 	reg |= WILC_HAVE_LEGACY_RF_SETTINGS;
 #ifdef XTAL_24
 	reg |= WILC_HAVE_XTAL_24;

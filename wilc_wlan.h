@@ -107,7 +107,7 @@
 #define WILC_HAVE_XTAL_24		BIT(6)
 #define WILC_HAVE_DISABLE_WILC_UART	BIT(7)
 #define WILC_HAVE_USE_IRQ_AS_HOST_WAKE	BIT(8)
-
+#define WILC_HAVE_SIN_IP_ANT_DEV_MODULE	BIT(9)
 /********************************************
  *
  *      Wlan Defines
