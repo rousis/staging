@@ -4107,7 +4107,7 @@ int wilc_get_tx_power(struct wilc_vif *vif, u8 *tx_power)
 
 	ret = wilc_mq_send(&hif_msg_q, &msg, sizeof(struct host_if_msg));
 	if (ret)
-		netdev_err(vif->ndev, "Failed to get TX PWR\n");
+		return -EIO;
 
 	wait_for_completion(&hif_wait_response);
 	*tx_power = msg.body.tx_power.tx_pwr;
