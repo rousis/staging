@@ -355,10 +355,12 @@ int wilc_wlan_get_firmware(struct net_device *dev)
 
 	chip_id = wilc_get_chipid(wilc, false);
 
-	if (chip_id < 0x1003a0)
-		firmware = FIRMWARE_1002;
-	else
+	if (chip_id < 0x1003a0) {
+		netdev_info(dev, "This chip(WILC1002) is not supported\n");
+		goto _fail_;
+	} else {
 		firmware = FIRMWARE_1003;
+	}
 
 	netdev_info(dev, "loading firmware %s\n", firmware);
 

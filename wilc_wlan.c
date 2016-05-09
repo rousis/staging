@@ -499,19 +499,6 @@ void chip_wakeup(struct wilc *wilc)
 		} while ((clk_status_reg & BIT(0)) == 0);
 	}
 
-	if (chip_ps_state == CHIP_SLEEPING_MANUAL) {
-		if (wilc_get_chipid(wilc, false) < 0x1002b0) {
-			u32 val32;
-
-			wilc->hif_func->hif_read_reg(wilc, 0x1e1c, &val32);
-			val32 |= BIT(6);
-			wilc->hif_func->hif_write_reg(wilc, 0x1e1c, val32);
-
-			wilc->hif_func->hif_read_reg(wilc, 0x1e9c, &val32);
-			val32 |= BIT(6);
-			wilc->hif_func->hif_write_reg(wilc, 0x1e9c, val32);
-		}
-	}
 	chip_ps_state = CHIP_WAKEDUP;
 }
 EXPORT_SYMBOL_GPL(chip_wakeup);
@@ -1373,15 +1360,6 @@ u32 wilc_get_chipid(struct wilc *wilc, bool update)
 		if (!ISWILC1000(tempchipid)) {
 			chipid = 0;
 			return chipid;
-		}
-		if (tempchipid == 0x1002a0) {
-			if (rfrevid != 0x1)
-				tempchipid = 0x1002a1;
-		} else if (tempchipid == 0x1002b0) {
-			if (rfrevid == 0x4)
-				tempchipid = 0x1002b1;
-			else if (rfrevid != 0x3)
-				tempchipid = 0x1002b2;
 		}
 
 		chipid = tempchipid;
