@@ -274,6 +274,13 @@ enum wid_type {
 	WID_TYPE_FORCE_32BIT	= 0xFFFFFFFF
 };
 
+enum antenna_type {
+	ANTENNA1		= 0,
+	ANTENNA2		= 1,
+	DIVERSITY		= 2,
+	NUM_ANT_MODE
+};
+
 struct wid {
 	u16 id;
 	enum wid_type type;
@@ -524,6 +531,8 @@ typedef enum {
 	 *  -----------------------------------------------------------
 	 */
 	WID_JOIN_REQ			= 0x0020,
+
+	WID_ANTENNA_SELECTION		= 0x0021,
 
 	WID_LINKSPEED			= 0x0026,
 
