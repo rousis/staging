@@ -1201,7 +1201,7 @@ static int get_station(struct wiphy *wiphy, struct net_device *dev,
 			return -ENOENT;
 		}
 
-		sinfo->filled |= BIT(NL80211_STA_INFO_INACTIVE_TIME);
+		sinfo->filled |= STATION_INFO_INACTIVE_TIME;
 
 		wilc_get_inactive_time(vif, mac, &inactive_time);
 		sinfo->inactive_time = 1000 * inactive_time;
@@ -1212,11 +1212,11 @@ static int get_station(struct wiphy *wiphy, struct net_device *dev,
 
 		wilc_get_statistics(vif, &strStatistics);
 
-		sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL) |
-						BIT(NL80211_STA_INFO_RX_PACKETS) |
-						BIT(NL80211_STA_INFO_TX_PACKETS) |
-						BIT(NL80211_STA_INFO_TX_FAILED) |
-						BIT(NL80211_STA_INFO_TX_BITRATE);
+		sinfo->filled |= STATION_INFO_INACTIVE_TIME |
+						STATION_INFO_RX_PACKETS |
+						STATION_INFO_TX_PACKETS |
+						STATION_INFO_TX_FAILED |
+						STATION_INFO_TX_BITRATE;
 
 		sinfo->signal = strStatistics.rssi;
 		sinfo->rx_packets = strStatistics.rx_cnt;
@@ -1799,7 +1799,7 @@ static int dump_station(struct wiphy *wiphy, struct net_device *dev,
 	priv = wiphy_priv(wiphy);
 	vif = netdev_priv(priv->dev);
 
-	sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
+	sinfo->filled |= STATION_INFO_SIGNAL;
 
 	wilc_get_rssi(vif, &sinfo->signal);
 
