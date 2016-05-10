@@ -663,6 +663,7 @@ static int connect(struct wiphy *wiphy, struct net_device *dev,
 {
 	s32 s32Error = 0;
 	u32 i;
+	u32 select_cnt = last_scanned_cnt + 1;
 	u8 u8security = NO_ENCRYPT;
 	enum AUTHTYPE tenuAuth_type = ANY;
 
@@ -686,18 +687,25 @@ static int connect(struct wiphy *wiphy, struct net_device *dev,
 		    memcmp(last_scanned_shadow[i].ssid,
 			   sme->ssid,
 			   sme->ssid_len) == 0) {
-			if (!sme->bssid)
-				break;
-			else
+			if (!sme->bssid) {
+				if (select_cnt == (last_scanned_cnt + 1))
+					select_cnt = i;
+				else if (last_scanned_shadow[i].rssi >
+					 last_scanned_shadow[select_cnt].rssi)
+					select_cnt = i;
+			} else {
 				if (memcmp(last_scanned_shadow[i].bssid,
 					   sme->bssid,
-					   ETH_ALEN) == 0)
+					   ETH_ALEN) == 0) {
+					select_cnt = i;
 					break;
+				}
+			}
 		}
 	}
 
-	if (i < last_scanned_cnt) {
-		pstrNetworkInfo = &last_scanned_shadow[i];
+	if (select_cnt < last_scanned_cnt) {
+		pstrNetworkInfo = &last_scanned_shadow[select_cnt];
 	} else {
 		s32Error = -ENOENT;
 		wilc_connecting = 0;
