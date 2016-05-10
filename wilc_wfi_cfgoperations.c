@@ -2273,9 +2273,6 @@ struct wireless_dev *wilc_create_wiphy(struct net_device *net, struct device *de
 	priv = wdev_priv(wdev);
 	priv->wdev = wdev;
 	wdev->wiphy->max_scan_ssids = MAX_NUM_PROBED_SSID;
-#ifdef CONFIG_PM
-	wdev->wiphy->wowlan = &wowlan_support;
-#endif
 	wdev->wiphy->max_num_pmkids = WILC_MAX_NUM_PMKIDS;
 	wdev->wiphy->max_scan_ie_len = 1000;
 	wdev->wiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
