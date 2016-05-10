@@ -249,7 +249,6 @@ static void refresh_scan(void *user_void, u8 all, bool direct_scan)
 				    direct_scan) {
 					bss = cfg80211_inform_bss(wiphy,
 								  channel,
-								  CFG80211_BSS_FTYPE_UNKNOWN,
 								  network_info->bssid,
 								  network_info->tsf_hi,
 								  network_info->cap_info,
@@ -424,7 +423,6 @@ static void CfgScanResult(enum scan_event scan_event,
 						if (!(memcmp("DIRECT-", network_info->ssid, 7))) {
 							bss = cfg80211_inform_bss(wiphy,
 										  channel,
-										  CFG80211_BSS_FTYPE_UNKNOWN,
 										  network_info->bssid,
 										  network_info->tsf_hi,
 										  network_info->cap_info,
