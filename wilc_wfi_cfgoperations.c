@@ -74,10 +74,6 @@ static const struct ieee80211_txrx_stypes
 	}
 };
 
-static const struct wiphy_wowlan_support wowlan_support = {
-	.flags = WIPHY_WOWLAN_ANY
-};
-
 #define WILC_WFI_DWELL_PASSIVE 100
 #define WILC_WFI_DWELL_ACTIVE  40
 
