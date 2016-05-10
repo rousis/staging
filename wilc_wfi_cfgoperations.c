@@ -1606,13 +1606,15 @@ static int cancel_remain_on_channel(struct wiphy *wiphy,
 
 static int mgmt_tx(struct wiphy *wiphy,
 		   struct wireless_dev *wdev,
-		   struct cfg80211_mgmt_tx_params *params,
+		   struct ieee80211_channel *chan,
+		   bool offchan,
+		   unsigned int wait,
+		   const u8 *buf,
+		   size_t len,
+		   bool no_cck,
+		   bool dont_wait_for_ack,
 		   u64 *cookie)
 {
-	struct ieee80211_channel *chan = params->chan;
-	unsigned int wait = params->wait;
-	const u8 *buf = params->buf;
-	size_t len = params->len;
 	const struct ieee80211_mgmt *mgmt;
 	struct p2p_mgmt_data *mgmt_tx;
 	struct wilc_priv *priv;
