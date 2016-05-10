@@ -1500,7 +1500,7 @@ void WILC_WFI_p2p_rx(struct net_device *dev, u8 *buff, u32 size)
 
 
 					if ((buff[P2P_PUB_ACTION_SUBTYPE] == GO_NEG_REQ || buff[P2P_PUB_ACTION_SUBTYPE] == GO_NEG_RSP) && (wilc_ie))	{
-						cfg80211_rx_mgmt(priv->wdev, s32Freq, 0, buff, size - 7, 0);
+						cfg80211_rx_mgmt(priv->wdev, s32Freq, 0, buff, size - 7, GFP_ATOMIC);
 						return;
 					}
 					break;
@@ -1512,7 +1512,7 @@ void WILC_WFI_p2p_rx(struct net_device *dev, u8 *buff, u32 size)
 			}
 		}
 
-		cfg80211_rx_mgmt(priv->wdev, s32Freq, 0, buff, size, 0);
+		cfg80211_rx_mgmt(priv->wdev, s32Freq, 0, buff, size, GFP_ATOMIC);
 	}
 }
 
