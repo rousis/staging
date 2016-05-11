@@ -211,6 +211,7 @@ struct txq_entry_t {
 	struct txq_entry_t *next;
 	struct txq_entry_t *prev;
 	int type;
+	u8 q_num;
 	int tcp_pending_ack_idx;
 	u8 *buffer;
 	int buffer_size;
