@@ -217,6 +217,13 @@ typedef void (*wilc_debug_func)(u32, char *, ...);
  *      Tx/Rx Queue Structure
  *
  ********************************************/
+struct txq_handle {
+	struct txq_entry_t *txq_head;
+	struct txq_entry_t *txq_tail;
+	u16 count;
+	u8 acm;
+};
+
 enum ip_pkt_priority {
 	AC_VO_Q = 0,
 	AC_VI_Q = 1,
