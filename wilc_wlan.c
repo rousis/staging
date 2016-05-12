@@ -695,6 +695,9 @@ int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 	int i, entries = 0;
 	u32 sum;
 	u32 reg;
+	u8 ac_desired_ratio[NQUEUES] = {0, 0, 0, 0};
+	u8 ac_preserve_ratio[NQUEUES] = {1, 1, 1, 1};
+	u8 *num_pkts_to_add;
 	u8 *txb;
 	u32 offset = 0;
 	int vmm_sz = 0;
@@ -703,6 +706,7 @@ int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 	int counter;
 	int timeout;
 	u32 vmm_table[WILC_VMM_TBL_SIZE];
+	static u8 ac_fw_count[NQUEUES] = {0, 0, 0, 0};
 	struct wilc_vif *vif;
 	struct wilc *wilc;
 
@@ -719,10 +723,14 @@ int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 			if (wilc->quit)
 				break;
 
+			if (ac_balance(ac_fw_count, ac_desired_ratio))
+				return -1;
+
 			wilc_wlan_txq_filter_dup_tcp_ack(dev);
 			tqe = wilc_wlan_txq_get_first(wilc);
 			i = 0;
 			sum = 0;
+			num_pkts_to_add = ac_desired_ratio;
 			do {
 				if (tqe && (i < (WILC_VMM_TBL_SIZE - 1))) {
 					if (tqe->type == WILC_CFG_PKT)
@@ -751,6 +759,7 @@ int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 				} else {
 					break;
 				}
+				num_pkts_to_add = ac_preserve_ratio;
 			} while (1);
 
 			if (i == 0)
@@ -767,6 +776,8 @@ int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 					break;
 
 				if ((reg & 0x1) == 0) {
+					ac_pkt_count(reg, ac_fw_count);
+					ac_acm_bit(wilc, reg);
 					break;
 				}
 				counter++;
