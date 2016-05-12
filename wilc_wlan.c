@@ -545,14 +545,14 @@ int wilc_wlan_txq_add_mgmt_pkt(struct net_device *dev, void *priv, u8 *buffer,
 	return 1;
 }
 
-static struct txq_entry_t *wilc_wlan_txq_get_first(struct wilc *wilc)
+static struct txq_entry_t *wilc_wlan_txq_get_first(struct wilc *wilc, u8 q_num)
 {
 	struct txq_entry_t *tqe;
 	unsigned long flags;
 
 	spin_lock_irqsave(&wilc->txq_spinlock, flags);
 
-	tqe = wilc->txq_head;
+	tqe = wilc->txq[q_num].txq_head;
 
 	spin_unlock_irqrestore(&wilc->txq_spinlock, flags);
 
@@ -693,15 +693,18 @@ EXPORT_SYMBOL_GPL(host_sleep_notify);
 int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 {
 	int i, entries = 0;
+	u8 k, ac;
 	u32 sum;
 	u32 reg;
 	u8 ac_desired_ratio[NQUEUES] = {0, 0, 0, 0};
 	u8 ac_preserve_ratio[NQUEUES] = {1, 1, 1, 1};
 	u8 *num_pkts_to_add;
+	uint8_t vmm_entries_ac[WILC_VMM_TBL_SIZE];
 	u8 *txb;
 	u32 offset = 0;
+	bool max_size_over = 0, ac_exist = 0;
 	int vmm_sz = 0;
-	struct txq_entry_t *tqe;
+	struct txq_entry_t *tqe_q[NQUEUES];
 	int ret = 0;
 	int counter;
 	int timeout;
@@ -727,40 +730,56 @@ int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 				return -1;
 
 			wilc_wlan_txq_filter_dup_tcp_ack(dev);
-			tqe = wilc_wlan_txq_get_first(wilc);
+
+			for(ac = 0; ac < NQUEUES; ac++)
+				tqe_q[ac] = wilc_wlan_txq_get_first(wilc, ac);
+
 			i = 0;
 			sum = 0;
+			max_size_over = 0;
 			num_pkts_to_add = ac_desired_ratio;
 			do {
-				if (tqe && (i < (WILC_VMM_TBL_SIZE - 1))) {
-					if (tqe->type == WILC_CFG_PKT)
-						vmm_sz = ETH_CONFIG_PKT_HDR_OFFSET;
-					else if (tqe->type == WILC_NET_PKT)
-						vmm_sz = ETH_ETHERNET_HDR_OFFSET;
-					else
-						vmm_sz = HOST_HDR_OFFSET;
+				ac_exist = 0;
+				for(ac = 0; (ac < NQUEUES) && (!max_size_over); ac++) {
+					if (tqe_q[ac]) {
+						ac_exist = 1;
+						for(k = 0; (k < num_pkts_to_add[ac]) && (!max_size_over) && tqe_q[ac]; k++) {
+							if (i < (WILC_VMM_TBL_SIZE - 1)) {
+								if (tqe_q[ac]->type == WILC_CFG_PKT)
+									vmm_sz = ETH_CONFIG_PKT_HDR_OFFSET;
+								else if (tqe_q[ac]->type == WILC_NET_PKT)
+									vmm_sz = ETH_ETHERNET_HDR_OFFSET;
+								else
+									vmm_sz = HOST_HDR_OFFSET;
 
-					vmm_sz += tqe->buffer_size;
+								vmm_sz += tqe_q[ac]->buffer_size;
 
-					if (vmm_sz & 0x3)
-						vmm_sz = (vmm_sz + 4) & ~0x3;
+								if (vmm_sz & 0x3)
+									vmm_sz = (vmm_sz + 4) & ~0x3;
 
-					if ((sum + vmm_sz) > LINUX_TX_SIZE)
-						break;
+								if ((sum + vmm_sz) > LINUX_TX_SIZE) {
+									max_size_over = 1;
+									break;
+								}
 
-					vmm_table[i] = vmm_sz / 4;
-					if (tqe->type == WILC_CFG_PKT)
-						vmm_table[i] |= BIT(10);
-					vmm_table[i] = cpu_to_le32(vmm_table[i]);
+								vmm_table[i] = vmm_sz / 4;
+								if (tqe_q[ac]->type == WILC_CFG_PKT)
+									vmm_table[i] |= BIT(10);
+								vmm_table[i] = cpu_to_le32(vmm_table[i]);
+								vmm_entries_ac[i] = ac;
 
-					i++;
-					sum += vmm_sz;
-					tqe = wilc_wlan_txq_get_next(wilc, tqe);
-				} else {
-					break;
+								i++;
+								sum += vmm_sz;
+								tqe_q[ac] = wilc_wlan_txq_get_next(wilc, tqe_q[ac]);
+							} else {
+								max_size_over = 1;
+								break;
+							}
+						}
+					}
 				}
 				num_pkts_to_add = ac_preserve_ratio;
-			} while (1);
+			} while (!max_size_over && ac_exist);
 
 			if (i == 0)
 				break;
