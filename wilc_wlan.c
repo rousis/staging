@@ -39,7 +39,7 @@ static void wilc_wlan_txq_remove(struct wilc *wilc, u8 q_num,
 }
 
 static struct txq_entry_t *
-wilc_wlan_txq_remove_from_head(struct net_device *dev)
+wilc_wlan_txq_remove_from_head(struct net_device *dev, u8 q_num)
 {
 	struct txq_entry_t *tqe;
 	unsigned long flags;
@@ -50,13 +50,14 @@ wilc_wlan_txq_remove_from_head(struct net_device *dev)
 	wilc = vif->wilc;
 
 	spin_lock_irqsave(&wilc->txq_spinlock, flags);
-	if (wilc->txq_head) {
-		tqe = wilc->txq_head;
-		wilc->txq_head = tqe->next;
-		if (wilc->txq_head)
-			wilc->txq_head->prev = NULL;
+	if (wilc->txq[q_num].txq_head) {
+		tqe = wilc->txq[q_num].txq_head;
+		wilc->txq[q_num].txq_head = tqe->next;
+		if (wilc->txq[q_num].txq_head)
+			wilc->txq[q_num].txq_head->prev = NULL;
 
 		wilc->txq_entries -= 1;
+		wilc->txq[q_num].count--;
 	} else {
 		tqe = NULL;
 	}
@@ -699,7 +700,7 @@ int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 	u8 ac_desired_ratio[NQUEUES] = {0, 0, 0, 0};
 	u8 ac_preserve_ratio[NQUEUES] = {1, 1, 1, 1};
 	u8 *num_pkts_to_add;
-	uint8_t vmm_entries_ac[WILC_VMM_TBL_SIZE];
+	u8 vmm_entries_ac[WILC_VMM_TBL_SIZE];
 	u8 *txb;
 	u32 offset = 0;
 	bool max_size_over = 0, ac_exist = 0;
@@ -710,6 +711,7 @@ int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 	int timeout;
 	u32 vmm_table[WILC_VMM_TBL_SIZE];
 	static u8 ac_fw_count[NQUEUES] = {0, 0, 0, 0};
+	u8 ac_pkt_num_to_chip[NQUEUES] = {0, 0, 0, 0};
 	struct wilc_vif *vif;
 	struct wilc *wilc;
 
@@ -868,7 +870,8 @@ int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 			i = 0;
 			do {
 				struct txq_entry_t *tqe;
-				tqe = wilc_wlan_txq_remove_from_head(dev);
+				tqe = wilc_wlan_txq_remove_from_head(dev, vmm_entries_ac[i]);
+				ac_pkt_num_to_chip[vmm_entries_ac[i]]++;
 				if (tqe && (vmm_table[i] != 0)) {
 					u32 header, buffer_offset;
 
@@ -914,6 +917,9 @@ int wilc_wlan_handle_txq(struct net_device *dev, u32 *txq_count)
 					break;
 				}
 			} while (--entries);
+
+			for(i = 0; i < NQUEUES; i++)
+				ac_fw_count[i] += ac_pkt_num_to_chip[i];
 
 			acquire_bus(wilc, ACQUIRE_AND_WAKEUP);
 
@@ -1305,6 +1311,7 @@ void wilc_wlan_cleanup(struct net_device *dev)
 	struct rxq_entry_t *rqe;
 	u32 reg = 0;
 	int ret;
+	u8 ac;
 	struct wilc_vif *vif;
 	struct wilc *wilc;
 
@@ -1312,14 +1319,16 @@ void wilc_wlan_cleanup(struct net_device *dev)
 	wilc = vif->wilc;
 
 	wilc->quit = 1;
-	do {
-		tqe = wilc_wlan_txq_remove_from_head(dev);
-		if (!tqe)
-			break;
-		if (tqe->tx_complete_func)
-			tqe->tx_complete_func(tqe->priv, 0);
-		kfree(tqe);
-	} while (1);
+	for (ac = 0; ac < NQUEUES; ac++) {
+		do {
+			tqe = wilc_wlan_txq_remove_from_head(dev, ac);
+			if (!tqe)
+				break;
+			if (tqe->tx_complete_func)
+				tqe->tx_complete_func(tqe->priv, 0);
+			kfree(tqe);
+		} while (1);
+	}
 
 	do {
 		rqe = wilc_wlan_rxq_remove(wilc);
