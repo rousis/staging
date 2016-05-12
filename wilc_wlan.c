@@ -95,7 +95,7 @@ static void wilc_wlan_txq_add_to_tail(struct net_device *dev, u8 q_num,
 	up(&wilc->txq_event);
 }
 
-static int wilc_wlan_txq_add_to_head(struct wilc_vif *vif,
+static int wilc_wlan_txq_add_to_head(struct wilc_vif *vif, u8 q_num,
 				     struct txq_entry_t *tqe)
 {
 	unsigned long flags;
@@ -107,18 +107,19 @@ static int wilc_wlan_txq_add_to_head(struct wilc_vif *vif,
 
 	spin_lock_irqsave(&wilc->txq_spinlock, flags);
 
-	if (!wilc->txq_head) {
+	if (!wilc->txq[q_num].txq_head) {
 		tqe->next = NULL;
 		tqe->prev = NULL;
-		wilc->txq_head = tqe;
-		wilc->txq_tail = tqe;
+		wilc->txq[q_num].txq_head = tqe;
+		wilc->txq[q_num].txq_tail = tqe;
 	} else {
-		tqe->next = wilc->txq_head;
+		tqe->next = wilc->txq[q_num].txq_head;
 		tqe->prev = NULL;
-		wilc->txq_head->prev = tqe;
-		wilc->txq_head = tqe;
+		wilc->txq[q_num].txq_head->prev = tqe;
+		wilc->txq[q_num].txq_head = tqe;
 	}
 	wilc->txq_entries += 1;
+	wilc->txq[q_num].count++;
 
 	spin_unlock_irqrestore(&wilc->txq_spinlock, flags);
 	up(&wilc->txq_add_to_head_cs);
@@ -326,9 +327,10 @@ static int wilc_wlan_txq_add_cfg_pkt(struct wilc_vif *vif, u8 *buffer,
 	tqe->buffer_size = buffer_size;
 	tqe->tx_complete_func = NULL;
 	tqe->priv = NULL;
+	tqe->q_num = AC_VO_Q;
 	tqe->tcp_pending_ack_idx = NOT_TCP_ACK;
 
-	if (wilc_wlan_txq_add_to_head(vif, tqe)) {
+	if (wilc_wlan_txq_add_to_head(vif, AC_VO_Q, tqe)) {
 		kfree(tqe);
 		return 0;
 	}
