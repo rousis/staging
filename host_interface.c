@@ -374,9 +374,9 @@ static void handle_set_ip_address(struct wilc_vif *vif, u8 *ip_addr, u8 idx)
 		netdev_err(vif->ndev, "Failed to set IP address\n");
 }
 
-static s32 handle_get_ip_address(struct wilc_vif *vif, u8 idx)
+static void handle_get_ip_address(struct wilc_vif *vif, u8 idx)
 {
-	s32 result = 0;
+	int ret = 0;
 	struct wid wid;
 
 	wid.id = (u16)WID_IP_ADDRESS;
@@ -384,8 +384,8 @@ static s32 handle_get_ip_address(struct wilc_vif *vif, u8 idx)
 	wid.val = kmalloc(IP_ALEN, GFP_KERNEL);
 	wid.size = IP_ALEN;
 
-	result = wilc_send_config_pkt(vif, GET_CFG, &wid, 1,
-				      wilc_get_vif_idx(vif));
+	ret = wilc_send_config_pkt(vif, GET_CFG, &wid, 1,
+				   wilc_get_vif_idx(vif));
 
 	memcpy(get_ip[idx], wid.val, IP_ALEN);
 
@@ -394,18 +394,14 @@ static s32 handle_get_ip_address(struct wilc_vif *vif, u8 idx)
 	if (memcmp(get_ip[idx], set_ip[idx], IP_ALEN) != 0)
 		wilc_setup_ipaddress(vif, set_ip[idx], idx);
 
-	if (result != 0) {
+	if (ret)
 		netdev_err(vif->ndev, "Failed to get IP address\n");
-		return -EINVAL;
-	}
-
-	return result;
 }
 
-static s32 handle_get_mac_address(struct wilc_vif *vif,
-				  struct get_mac_addr *get_mac_addr)
+static void handle_get_mac_address(struct wilc_vif *vif,
+				   struct get_mac_addr *get_mac_addr)
 {
-	s32 result = 0;
+	int ret = 0;
 	struct wid wid;
 
 	wid.id = (u16)WID_MAC_ADDR;
@@ -413,16 +409,12 @@ static s32 handle_get_mac_address(struct wilc_vif *vif,
 	wid.val = get_mac_addr->mac_addr;
 	wid.size = ETH_ALEN;
 
-	result = wilc_send_config_pkt(vif, GET_CFG, &wid, 1,
-				      wilc_get_vif_idx(vif));
+	ret = wilc_send_config_pkt(vif, GET_CFG, &wid, 1,
+				   wilc_get_vif_idx(vif));
 
-	if (result) {
+	if (ret)
 		netdev_err(vif->ndev, "Failed to get mac address\n");
-		result = -EFAULT;
-	}
 	complete(&hif_wait_response);
-
-	return result;
 }
 
 static s32 handle_cfg_param(struct wilc_vif *vif,
