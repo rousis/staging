@@ -216,9 +216,11 @@ static struct sdio_driver wilc1000_sdio_driver = {
 	.id_table	= wilc_sdio_ids,
 	.probe		= linux_sdio_probe,
 	.remove		= linux_sdio_remove,
+#if 0
 	.drv = {
 		.pm = &wilc_sdio_pm_ops,
 	}
+#endif
 };
 module_driver(wilc1000_sdio_driver,
 	      sdio_register_driver,
