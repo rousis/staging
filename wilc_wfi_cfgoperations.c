@@ -662,6 +662,7 @@ static int connect(struct wiphy *wiphy, struct net_device *dev,
 {
 	s32 s32Error = 0;
 	u32 i;
+	u32 select_cnt = last_scanned_cnt + 1;
 	u8 u8security = NO_ENCRYPT;
 	enum AUTHTYPE tenuAuth_type = ANY;
 
@@ -685,18 +686,25 @@ static int connect(struct wiphy *wiphy, struct net_device *dev,
 		    memcmp(last_scanned_shadow[i].ssid,
 			   sme->ssid,
 			   sme->ssid_len) == 0) {
-			if (!sme->bssid)
-				break;
-			else
+			if (!sme->bssid) {
+				if (select_cnt == (last_scanned_cnt + 1))
+					select_cnt = i;
+				else if (last_scanned_shadow[i].rssi >
+					 last_scanned_shadow[select_cnt].rssi)
+					select_cnt = i;
+			} else {
 				if (memcmp(last_scanned_shadow[i].bssid,
 					   sme->bssid,
-					   ETH_ALEN) == 0)
+					   ETH_ALEN) == 0) {
+					select_cnt = i;
 					break;
+				}
+			}
 		}
 	}
 
-	if (i < last_scanned_cnt) {
-		pstrNetworkInfo = &last_scanned_shadow[i];
+	if (select_cnt < last_scanned_cnt) {
+		pstrNetworkInfo = &last_scanned_shadow[select_cnt];
 	} else {
 		s32Error = -ENOENT;
 		wilc_connecting = 0;
@@ -1803,6 +1811,7 @@ static int dump_station(struct wiphy *wiphy, struct net_device *dev,
 
 	wilc_get_rssi(vif, &sinfo->signal);
 
+	memcpy(mac, priv->au8AssociatedBss, ETH_ALEN);
 	return 0;
 }
 
@@ -2191,6 +2200,22 @@ static int get_tx_power(struct wiphy *wiphy, struct wireless_dev *wdev,
 	return ret;
 }
 
+static int set_antenna(struct wiphy *wiphy, u32 tx_ant, u32 rx_ant)
+{
+	int ret;
+	struct wilc_priv *priv = wiphy_priv(wiphy);
+	struct wilc_vif *vif = netdev_priv(priv->dev);
+
+	if (!tx_ant || !rx_ant)
+		return -EINVAL;
+
+	ret = wilc_set_antenna(vif, (u8)tx_ant);
+	if (ret)
+		netdev_err(vif->ndev, "Failed to set tx antenna\n");
+
+	return ret;
+}
+
 static struct cfg80211_ops wilc_cfg80211_ops = {
 	.set_monitor_channel = set_channel,
 	.scan = scan,
@@ -2231,7 +2256,7 @@ static struct cfg80211_ops wilc_cfg80211_ops = {
 	.set_wakeup = wilc_set_wakeup,
 	.set_tx_power = set_tx_power,
 	.get_tx_power = get_tx_power,
-
+	.set_antenna = set_antenna,
 };
 
 static struct wireless_dev *WILC_WFI_CfgAlloc(void)
@@ -2285,6 +2310,8 @@ struct wireless_dev *wilc_create_wiphy(struct net_device *net, struct device *de
 	wdev->wiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
 	wdev->wiphy->cipher_suites = cipher_suites;
 	wdev->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
+	wdev->wiphy->available_antennas_tx = 0x3;
+	wdev->wiphy->available_antennas_rx = 0x3;
 	wdev->wiphy->mgmt_stypes = wilc_wfi_cfg80211_mgmt_types;
 
 	wdev->wiphy->max_remain_on_channel_duration = 500;
