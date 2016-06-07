@@ -393,12 +393,12 @@ static int linux_wlan_start_firmware(struct net_device *dev)
 	ret = wilc_wlan_start(wilc);
 	if (ret < 0)
 		return ret;
-
+/*
 	if (wilc->io_type == HIF_SDIO) {
 		ret = pm_runtime_get_sync(func->card->host->parent);
 		if (ret < 0)
 			return ret;
-	}
+	}*/
 
 	ret = wilc_lock_timeout(wilc, &wilc->sync_event, 5000);
 	if (ret)
